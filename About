@@ -1,0 +1,38 @@
+This project is a **Repeatable Provider & Practice Directory Update Pipeline**, designed to automate the maintenance of healthcare provider data. It functions as a robust "gatekeeper" that sits between raw, inconsistent external data and your master provider database.
+
+### The Core Problem
+
+Healthcare directories suffer from "data rot," where contact information, addresses, and clinical specialties become outdated quickly. Manually verifying these is slow and expensive, while simple automated systems often discard accurate data due to minor formatting differences or disagreements between sources.
+
+### The Solution: Granular Per-Field Architecture
+
+Unlike standard pipelines that validate entire records at once, this system operates on a **field-by-field basis**. This allows the pipeline to update an address (if it has high confidence) while simultaneously flagging a specialty mismatch for human review, rather than rejecting the entire record.
+
+### How the Pipeline Works (The 8 Operational Stages)
+
+1. **Prioritization & Staleness:** Instead of querying everything, the pipeline uses SQL logic to target records with a high probability of having changed (e.g., records not updated in the last 6 months).
+2. **Data Telemetry:** It pulls baseline data from the **NPI Registry (Free Tier)** and supplemental data from secondary sources (CMS, medical boards, practice websites) only when necessary.
+3. **Normalization:** The system standardizes inputs—e.g., converting "St.", "Street", and "St" to a uniform format, and mapping clinical specialties to standard NUCC Taxonomy codes.
+4. **AI Comparison:** It performs structural diffs to isolate conflicts.
+5. **Weighted Confidence Scoring:** Every proposed change is passed through the core consensus formula:
+> **Confidence (C) = (W_agree × S_trust_avg) × F_risk × R_recency × M_multiplier**
+
+
+* *This formula factors in source reliability, field risk, and how recently the data was updated.*
+
+
+6. **Governance Routing:**
+* **Auto-Update:** High-confidence changes are written directly to the database.
+* **Human-in-the-Loop:** Anomalies are routed to an internal dashboard for human validation.
+* **Reject:** Low-confidence noise is discarded.
+
+
+7. **Audit Trail:** Every action, the original value, the proposed value, and the sources that verified it, are logged to ensure HIPAA-compliant data provenance.
+
+### Why This Architecture Wins
+
+* **Cost Efficiency:** By utilizing a "Free-Tier-First" fetching strategy (Stages 1–4) before triggering expensive AI or paid API resources, the pipeline minimizes operational overhead.
+* **Auditability:** Every update is traceable, which is essential for healthcare regulatory compliance.
+* **Resilience:** The "Per-Field" approach ensures that even if one source is incorrect, the system can rely on the consensus of others to keep the directory accurate.
+
+This architecture ensures that your directory remains a "single source of truth" without requiring massive manual labor, positioning it as a scalable enterprise-grade solution.
